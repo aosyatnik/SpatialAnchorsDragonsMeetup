@@ -52,8 +52,8 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
 #endif
             if (!crealedOrLoaded && ScannedPercent > 1.0f)
             {
-                CreateAnchorAsync();
-                //LoadAnchorAsync();
+                //CreateAnchorAsync();
+                LoadAnchorAsync();
                 crealedOrLoaded = true;
             }
         }
@@ -106,7 +106,7 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
         {
             Debug.Log(DEBUG_FILTER + "criteria creating");
             AnchorLocateCriteria criteria = new AnchorLocateCriteria();
-            criteria.Identifiers = new string[] { @"f1e29dc8-b025-4c4c-80b4-bbff4bf6a0cd" };
+            criteria.Identifiers = new string[] { @"52f30aa8-fe39-48c4-b247-d2aa25a3b1bd" };
             cloudSession.CreateWatcher(criteria);
             Debug.Log(DEBUG_FILTER + "created watcher");
 
