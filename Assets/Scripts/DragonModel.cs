@@ -84,8 +84,8 @@ public class DragonModel
     private void RunAway()
     {
         ActionState = ActionStates.Fly;
-        var newPosition = new Vector3(_position.x + 2*Speed, _position.y, _position.z + 2 * Speed);
-        _position = newPosition;
+        var newPosition = new Vector3(_position.x + 2 * Speed * Time.deltaTime, _position.y, _position.z + 2 * Speed * Time.deltaTime);
+        Position = newPosition;
     }
 
     #endregion
