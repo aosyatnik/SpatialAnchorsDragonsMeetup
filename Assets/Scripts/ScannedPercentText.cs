@@ -18,9 +18,17 @@ public class ScannedPercentText : MonoBehaviour
 
     void Update()
     {
-        if(_anchorsService != null && _anchorsService.ScannedPercent < 1)
+        if(_anchorsService != null)
         {
-            _text.text = String.Format("Scanned room percent {0:P2}.", _anchorsService.ScannedPercent);
+            if(_anchorsService.ScannedPercent < 1)
+            {
+                _text.text = String.Format("Scanned room percent {0:P2}.", _anchorsService.ScannedPercent);
+            }
+            else
+            {
+                _text.text = String.Format("Room is scanned. Dragon is somewhere here.");
+            }
+            
         }
     }
 }
