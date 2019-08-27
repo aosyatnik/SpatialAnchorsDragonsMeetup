@@ -20,7 +20,9 @@ public class DragonAI : MonoBehaviour
 
     void Update()
     {
+#if UNITY_WSA || WINDOWS_UWP
         // Main camera position is player's position.
         Dragon.TrackPlayerPosition(Camera.main.transform.position);
+#endif
     }
 }

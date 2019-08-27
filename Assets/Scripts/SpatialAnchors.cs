@@ -140,7 +140,6 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
             }
         }
 
-
         private void LoadAnchorAsync()
         {
             Debug.Log(DEBUG_FILTER + "criteria creating");
@@ -179,10 +178,6 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
         private GameObject SpawnOrMoveCurrentAnchoredObject(CloudSpatialAnchor foundAnchor)
         {
             Pose anchorPose = Pose.identity;
-#if UNITY_ANDROID || UNITY_IOS
-            // Android and ios use GetAnchorPose for getting position.
-            anchorPose = foundAnchor.GetAnchorPose();
-#endif
             GameObject newGameObject = GameObject.Instantiate(AnchoredObjectPrefab, anchorPose.position, anchorPose.rotation);
 
             // Mark game object as anchor.
@@ -191,8 +186,13 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
 #elif UNITY_WSA || WINDOWS_UWP
             newGameObject.AddComponent<WorldAnchor>();
 #endif
-
-#if UNITY_WSA || WINDOWS_UWP
+            // Get anchor position.
+#if UNITY_ANDROID || UNITY_IOS
+            anchorPose = foundAnchor.GetAnchorPose();
+            newGameObject.transform.position = anchorPose.position;
+            newGameObject.transform.rotation = anchorPose.rotation;
+            newGameObject.transform.localScale += new Vector3(5, 5, 5); // Make model 5 times bigger for mobile
+#elif UNITY_WSA || WINDOWS_UWP
             // Hololens is using SetNativeSpatialAnchorPtr for getting position.
             newGameObject.GetComponent<WorldAnchor>().SetNativeSpatialAnchorPtr(foundAnchor.LocalAnchor);
             newGameObject.transform.localScale += new Vector3(10, 10, 10); // Make model 10 times bigger for hololens
