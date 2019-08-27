@@ -16,6 +16,7 @@ using Microsoft.Azure.SpatialAnchors.Unity.Android;
 using Microsoft.Azure.SpatialAnchors.Unity.Android.ARCore;
 #elif UNITY_WSA || WINDOWS_UWP
 using UnityEngine.XR.WSA;
+using UnityEngine.XR.WSA.Input;
 #endif
 
 namespace Microsoft.Azure.SpatialAnchors.Unity
@@ -43,6 +44,10 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
             Start_Android();
 #else
             CreateNewCloudSession();
+#endif
+
+#if  UNITY_WSA || WINDOWS_UWP
+            CaptureGestures();
 #endif
         }
 
@@ -84,6 +89,7 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
 #endif
             if (!crealedOrLoaded && ScannedPercent > 1.0f)
             {
+                // TODO(Android): call this when tapped
                 //CreateAnchorAsync();
                 LoadAnchorAsync();
                 crealedOrLoaded = true;
@@ -139,7 +145,7 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
         {
             Debug.Log(DEBUG_FILTER + "criteria creating");
             AnchorLocateCriteria criteria = new AnchorLocateCriteria();
-            criteria.Identifiers = new string[] { @"d00b7874-3cef-40a6-aaba-cdbca8c86513" };
+            criteria.Identifiers = new string[] { @"d164f374-984c-4bbb-ab48-caa1c68fc458" };
             cloudSession.CreateWatcher(criteria);
             Debug.Log(DEBUG_FILTER + "created watcher");
 
@@ -188,8 +194,8 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
 
 #if UNITY_WSA || WINDOWS_UWP
             // Hololens is using SetNativeSpatialAnchorPtr for getting position.
-            // TODO: fix it! Loaded wrong data. WHY?! Dragon should be in front of user.
-            // newGameObject.GetComponent<WorldAnchor>().SetNativeSpatialAnchorPtr(foundAnchor.LocalAnchor);
+            newGameObject.GetComponent<WorldAnchor>().SetNativeSpatialAnchorPtr(foundAnchor.LocalAnchor);
+            newGameObject.transform.localScale += new Vector3(10, 10, 10); // Make model 10 times bigger for hololens
 #endif
             Debug.Log(DEBUG_FILTER + $"Position: {newGameObject.transform.position} Rotation: {newGameObject.transform.rotation}");
 
@@ -215,17 +221,12 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
             // TODO: implement this.
         }
 
-        private async Task CreateAnchorAsync()
+        private async Task CreateAnchorAsync(Vector3 hitPosition = new Vector3())
         {
-            // Create a local anchor, perhaps by hit-testing and spawning an object within the scene
-            Vector3 hitPosition = new Vector3();
-
 #if UNITY_IOS
             hitPosition = GetHitPosition_IOS();
 #elif UNITY_ANDROID
             hitPosition = GetHitPosition_Android();
-#elif WINDOWS_UWP || UNITY_WSA
-            hitPosition = GetHitPosition_Hololens();
 #endif
 
             Quaternion rotation = Quaternion.AngleAxis(0, Vector3.up);
@@ -312,18 +313,48 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
 #endif
         #endregion
 
-        #region Hololens (create anchor not ready)
+        #region Hololens
 #if UNITY_WSA || WINDOWS_UWP
-        public Vector3 GetHitPosition_Hololens()
-        {
-            RaycastHit hit;
-            // TODO: IMPLEMENT THIS
-            /*if (this.TryGazeHitTest(out hit))
-            {
-                return hit.point;
-            }*/
 
-            return new Vector3();
+        /// <summary>
+        /// Use the recognizer to detect air taps.
+        /// </summary>
+        private GestureRecognizer recognizer;
+
+        /// <summary>
+        /// TODO: write desc.
+        /// </summary>
+        private bool tapExecuted = false;
+
+        private void CaptureGestures()
+        {
+            recognizer = new GestureRecognizer();
+
+            recognizer.StartCapturingGestures();
+
+            recognizer.SetRecognizableGestures(GestureSettings.Tap);
+
+            recognizer.Tapped += HandleTap;
+        }
+
+        private void HandleTap(TappedEventArgs tapEvent)
+        {
+            if (tapExecuted)
+            {
+                return;
+            }
+
+            tapExecuted = true;
+            Debug.Log(DEBUG_FILTER + "hololens will create a new anchor.");
+
+            // Construct a Ray using forward direction of the HoloLens.
+            Ray GazeRay = new Ray(tapEvent.headPose.position, tapEvent.headPose.forward);
+
+            // Raycast to get the hit point in the real world.
+            RaycastHit hitInfo;
+            Physics.Raycast(GazeRay, out hitInfo, float.MaxValue);
+
+            CreateAnchorAsync(hitInfo.point);
         }
 #endif
         #endregion
