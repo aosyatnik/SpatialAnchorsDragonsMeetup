@@ -13,6 +13,7 @@ using UnityEngine.XR.iOS;
 #elif UNITY_ANDROID
 using GoogleARCore;
 using Microsoft.Azure.SpatialAnchors.Unity.Android;
+using Microsoft.Azure.SpatialAnchors.Unity.Android.ARCore;
 #elif UNITY_WSA || WINDOWS_UWP
 using UnityEngine.XR.WSA;
 #endif
@@ -45,8 +46,39 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
 #endif
         }
 
+        /// <summary>
+        /// Our queue of actions that will be executed on the main thread.
+        /// </summary>
+        private readonly Queue<Action> dispatchQueue = new Queue<Action>();
+
+        /// <summary>
+        /// Queues the specified <see cref="Action"/> on update.
+        /// </summary>
+        /// <param name="updateAction">The update action.</param>
+        protected void QueueOnUpdate(Action updateAction)
+        {
+            lock (dispatchQueue)
+            {
+                dispatchQueue.Enqueue(updateAction);
+            }
+        }
+
+        private void ProcessQueue()
+        {
+            lock (dispatchQueue)
+            {
+                if (dispatchQueue.Count > 0)
+                {
+                    dispatchQueue.Dequeue()();
+                }
+            }
+        }
+
         void Update()
         {
+#if UNITY_WSA || WINDOWS_UWP
+            ProcessQueue();
+#endif
 #if UNITY_ANDROID
             ProcessLatestFrame();
 #endif
@@ -96,17 +128,18 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
         {
             var status = args.Status;
             ScannedPercent = status.RecommendedForCreateProgress;
-            if(ScannedPercent < 1)
+            if (ScannedPercent < 1)
             {
                 Debug.Log(DEBUG_FILTER + "recommendedForCreate: " + args.Status.RecommendedForCreateProgress);
             }
         }
 
+
         private void LoadAnchorAsync()
         {
             Debug.Log(DEBUG_FILTER + "criteria creating");
             AnchorLocateCriteria criteria = new AnchorLocateCriteria();
-            criteria.Identifiers = new string[] { @"52f30aa8-fe39-48c4-b247-d2aa25a3b1bd" };
+            criteria.Identifiers = new string[] { @"d00b7874-3cef-40a6-aaba-cdbca8c86513" };
             cloudSession.CreateWatcher(criteria);
             Debug.Log(DEBUG_FILTER + "created watcher");
 
@@ -117,12 +150,12 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
                 {
                     case LocateAnchorStatus.Located:
                         CloudSpatialAnchor foundAnchor = args.Anchor;
-                        Pose anchorPose = Pose.identity;
-#if UNITY_ANDROID || UNITY_IOS
-                        anchorPose = foundAnchor.GetAnchorPose();
+#if UNITY_WSA || WINDOWS_UWP
+                        // Run on UI thread.
+                        QueueOnUpdate(() => SpawnOrMoveCurrentAnchoredObject(foundAnchor));
+#else
+                        SpawnOrMoveCurrentAnchoredObject(foundAnchor);
 #endif
-                        Debug.Log(DEBUG_FILTER + "position" + anchorPose.position.x + anchorPose.position.y + anchorPose.position.z);
-                        SpawnOrMoveCurrentAnchoredObject(anchorPose.position, anchorPose.rotation);
                         break;
                     case LocateAnchorStatus.AlreadyTracked:
                         Debug.Log(DEBUG_FILTER + "Anchor already tracked. Identifier: " + args.Identifier);
@@ -137,15 +170,32 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
             };
         }
 
-        private GameObject SpawnOrMoveCurrentAnchoredObject(Vector3 position, Quaternion rotation)
+        private GameObject SpawnOrMoveCurrentAnchoredObject(CloudSpatialAnchor foundAnchor)
         {
-            GameObject newGameObject = GameObject.Instantiate(AnchoredObjectPrefab, position, rotation);
+            Pose anchorPose = Pose.identity;
+#if UNITY_ANDROID || UNITY_IOS
+            // Android and ios use GetAnchorPose for getting position.
+            anchorPose = foundAnchor.GetAnchorPose();
+#endif
+            GameObject newGameObject = GameObject.Instantiate(AnchoredObjectPrefab, anchorPose.position, anchorPose.rotation);
+
             // Mark game object as anchor.
-            newGameObject.AddARAnchor();
+#if UNITY_ANDROID
+            newGameObject.AddComponent<UnityARCoreWorldAnchorComponent>();
+#elif UNITY_WSA || WINDOWS_UWP
+            newGameObject.AddComponent<WorldAnchor>();
+#endif
+
+#if UNITY_WSA || WINDOWS_UWP
+            // Hololens is using SetNativeSpatialAnchorPtr for getting position.
+            // TODO: fix it! Loaded wrong data. WHY?! Dragon should be in front of user.
+            // newGameObject.GetComponent<WorldAnchor>().SetNativeSpatialAnchorPtr(foundAnchor.LocalAnchor);
+#endif
+            Debug.Log(DEBUG_FILTER + $"Position: {newGameObject.transform.position} Rotation: {newGameObject.transform.rotation}");
 
             // Add ai.
             newGameObject.AddComponent<DragonAI>();
-            GetComponent<DragonAI>().Dragon.OnPositionChanged += Dragon_OnPositionChanged;
+            //newGameObject.GetComponent<DragonAI>().Dragon.OnPositionChanged += Dragon_OnPositionChanged;
 
             // Animate
             newGameObject.AddComponent<MeshRenderer>();
@@ -175,7 +225,7 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
 #elif UNITY_ANDROID
             hitPosition = GetHitPosition_Android();
 #elif WINDOWS_UWP || UNITY_WSA
-           hitPosition = GetHitPosition_Hololens();
+            hitPosition = GetHitPosition_Hololens();
 #endif
 
             Quaternion rotation = Quaternion.AngleAxis(0, Vector3.up);
@@ -262,7 +312,7 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
 #endif
         #endregion
 
-        #region Hololens (not ready)
+        #region Hololens (create anchor not ready)
 #if UNITY_WSA || WINDOWS_UWP
         public Vector3 GetHitPosition_Hololens()
         {
