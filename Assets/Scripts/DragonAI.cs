@@ -8,7 +8,7 @@ public class DragonAI : MonoBehaviour
 
     void Start()
     {
-        var initialPosition = gameObject.GetComponentInChildren<MeshRenderer>().transform.position;
+        var initialPosition = gameObject.GetComponent<MeshRenderer>().transform.position;
         Dragon = new DragonModel(initialPosition);
         Dragon.OnPositionChanged += Dragon_OnPositionChanged;
     }
