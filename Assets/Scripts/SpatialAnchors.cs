@@ -1,14 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Threading.Tasks;
 using UnityEngine;
-using System.Linq;
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.CosmosDB.Table;
 #if UNITY_IOS
 using Microsoft.Azure.SpatialAnchors.Unity.IOS.ARKit;
 using UnityEngine.XR.iOS;
@@ -23,12 +18,6 @@ using UnityEngine.XR.WSA.Input;
 
 namespace Microsoft.Azure.SpatialAnchors.Unity
 {
-    public class AnchorEntity : TableEntity
-    {
-        public AnchorEntity() { }
-        public string id { get; set; }
-    }
-
     /// <summary>
     /// Use this behavior to manage an Azure Spatial Service session for your game or app.
     /// </summary>
@@ -39,6 +28,7 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
         public static bool crealedOrLoaded = false;
 
         private CloudSpatialAnchorSession cloudSession = null;
+        private AzureStorageService storageService = new AzureStorageService();
         private GameObject localAnchor;
         public float ScannedPercent;
 
@@ -149,18 +139,10 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
         private void LoadAnchorAsync()
         {
             AnchorLocateCriteria criteria = new AnchorLocateCriteria();
+            string anchorId = storageService.GetLastAnchorId();
 
-            // --- TODO: move to storage account ---
-            CloudStorageAccount account = CloudStorageAccount.Parse("...");
-            var client = account.CreateCloudTableClient();
-            var table = client.GetTableReference("AnchorIds");
-            var retriveOperation = TableOperation.Retrieve<AnchorEntity>("anchor", "id");
-            var anchor = table.Execute(retriveOperation).Result as AnchorEntity;
-            // --- TODO: move to storage account ---
-
-            Debug.Log(DEBUG_FILTER + "we are going to load anchor with id: " + anchor.id);
-
-            criteria.Identifiers = new string[] { anchor.id };
+            Debug.Log(DEBUG_FILTER + "we are going to load anchor with id: " + anchorId);
+            criteria.Identifiers = new string[] { anchorId };
             cloudSession.CreateWatcher(criteria);
             Debug.Log(DEBUG_FILTER + "created watcher");
 
