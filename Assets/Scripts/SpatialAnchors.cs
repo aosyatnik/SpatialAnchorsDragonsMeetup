@@ -192,16 +192,16 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
 #endif
             Debug.Log(DEBUG_FILTER + $"Position: {newGameObject.transform.position} Rotation: {newGameObject.transform.rotation}");
 
-            // Add ai.
-            newGameObject.AddComponent<DragonAI>();
-            newGameObject.GetComponent<DragonAI>().Dragon.OnPositionChanged += Dragon_OnPositionChanged;
-
             // Animate
             newGameObject.AddComponent<MeshRenderer>();
             Animator animator = newGameObject.GetComponent<Animator>();
             var controller = Resources.Load("Dragon Animator Controller") as RuntimeAnimatorController;
             animator.runtimeAnimatorController = controller;
             newGameObject.AddComponent<DragonAnimation>();
+
+            // Add ai.
+            newGameObject.AddComponent<DragonAI>();
+            newGameObject.GetComponent<DragonAI>().Dragon.OnPositionChanged += Dragon_OnPositionChanged;
 
             return newGameObject;
         }
