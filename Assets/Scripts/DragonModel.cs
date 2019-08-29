@@ -5,10 +5,8 @@ using UnityEngine;
 
 public class DragonModel
 {
-    public DragonModel(Vector3 initPosition)
+    public DragonModel()
     {
-        Position = initPosition;
-        _center = initPosition;
     }
 
     #region Configurable variables
@@ -21,7 +19,7 @@ public class DragonModel
     /// <summary>
     /// Dragon's speed.
     /// </summary>
-    public int Speed { get; set; } = 1;
+    public float Speed { get; set; } = 0.3f;
 
     /// <summary>
     /// Radius of dragons route.
@@ -30,21 +28,22 @@ public class DragonModel
     #endregion
 
     #region Coordinates
+    private bool _initPositionWasSet = false;
     private Vector3 _center = new Vector3(0, 0, 0);
     private float _angle;
 
-    private Vector3 _position;
-    public Vector3 Position
+    private Transform _transform;
+    public Transform Transform
     {
-        get { return _position; }
+        get { return _transform; }
         private set
         {
-            _position = value;
-            OnPositionChanged?.Invoke(_position);
+            _transform = value;
+            OnTransformChanged?.Invoke(_transform);
         }
     }
 
-    public event Action<Vector3> OnPositionChanged;
+    public event Action<Transform> OnTransformChanged;
     #endregion
 
     #region Dragon state machine
@@ -75,7 +74,7 @@ public class DragonModel
     /// <param name="position">Player(head) position</param>
     public void TrackPlayerPosition(Vector3 playerPosition)
     {
-        var dist = CalculateDistance(playerPosition, Position);
+        var dist = CalculateDistance(playerPosition, Transform.position);
         Debug.Log("ASA log: distance" + dist);
         if (dist < MinPlayerDistance)
         {
@@ -84,6 +83,16 @@ public class DragonModel
         else
         {
             Idel();
+        }
+    }
+
+    public void SetInitTransform(Transform initTransform)
+    {
+        if(!_initPositionWasSet)
+        {
+            _transform = initTransform;
+            _center = initTransform.position;
+            _initPositionWasSet = true;
         }
     }
 
@@ -101,8 +110,8 @@ public class DragonModel
 
         _angle += Speed * Time.deltaTime;
         var offset = new Vector3(Mathf.Cos(_angle), 0, Mathf.Sin(_angle)) * Radius;
-        Position = _center + offset;
-        Debug.Log("ASA log: offset " + offset);
+        Transform.position = _center + offset;
+        OnTransformChanged?.Invoke(_transform);
     }
 
     #endregion

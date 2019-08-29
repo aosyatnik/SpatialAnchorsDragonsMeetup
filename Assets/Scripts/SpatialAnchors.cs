@@ -32,7 +32,15 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
         private GameObject localAnchor;
         public float ScannedPercent;
 
-        public GameObject AnchoredObjectPrefab = null;
+        /// <summary>
+        /// Prefab, that is used for anchor creation. I.e. dragon.
+        /// </summary>
+        public GameObject AnchoredObjectPrefab;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private CloudSpatialAnchor loadedAnchor;
 
         private void Start()
         {
@@ -151,9 +159,9 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
                 switch (args.Status)
                 {
                     case LocateAnchorStatus.Located:
-                        CloudSpatialAnchor foundAnchor = args.Anchor;
+                        loadedAnchor = args.Anchor;
                         // Run on UI thread.
-                        QueueOnUpdate(() => SpawnOrMoveCurrentAnchoredObject(foundAnchor));
+                        QueueOnUpdate(() => SpawnOrMoveCurrentAnchoredObject(loadedAnchor));
                         break;
                     case LocateAnchorStatus.AlreadyTracked:
                         Debug.Log(DEBUG_FILTER + "Anchor already tracked. Identifier: " + args.Identifier);
@@ -171,14 +179,14 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
         private GameObject SpawnOrMoveCurrentAnchoredObject(CloudSpatialAnchor foundAnchor)
         {
             Pose anchorPose = Pose.identity;
-            GameObject newGameObject = GameObject.Instantiate(AnchoredObjectPrefab, anchorPose.position, anchorPose.rotation);
+            if(localAnchor is null)
+            {
+                localAnchor = GameObject.Instantiate(AnchoredObjectPrefab, anchorPose.position, anchorPose.rotation);
+            }
 
             // Mark game object as anchor.
-#if UNITY_ANDROID
-            newGameObject.AddComponent<UnityARCoreWorldAnchorComponent>();
-#elif UNITY_WSA || WINDOWS_UWP
-            newGameObject.AddComponent<WorldAnchor>();
-#endif
+            localAnchor.AddARAnchor();
+
             // Get anchor position.
 #if UNITY_ANDROID || UNITY_IOS
             anchorPose = foundAnchor.GetAnchorPose();
@@ -187,32 +195,39 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
             newGameObject.transform.localScale += new Vector3(5, 5, 5); // Make model 5 times bigger for mobile
 #elif UNITY_WSA || WINDOWS_UWP
             // Hololens is using SetNativeSpatialAnchorPtr for getting position.
-            newGameObject.GetComponent<WorldAnchor>().SetNativeSpatialAnchorPtr(foundAnchor.LocalAnchor);
-            newGameObject.transform.localScale += new Vector3(10, 10, 10); // Make model 10 times bigger for hololens
+            localAnchor.GetComponent<WorldAnchor>().SetNativeSpatialAnchorPtr(foundAnchor.LocalAnchor);
+            localAnchor.transform.localScale += new Vector3(10, 10, 10); // Make model 10 times bigger for hololens
 #endif
-            Debug.Log(DEBUG_FILTER + $"Position: {newGameObject.transform.position} Rotation: {newGameObject.transform.rotation}");
+            Debug.Log(DEBUG_FILTER + $"Position: {localAnchor.transform.position} Rotation: {localAnchor.transform.rotation}");
 
             // Animate
-            newGameObject.AddComponent<MeshRenderer>();
-            Animator animator = newGameObject.GetComponent<Animator>();
+            localAnchor.AddComponent<MeshRenderer>();
+            Animator animator = localAnchor.GetComponent<Animator>();
             var controller = Resources.Load("Dragon Animator Controller") as RuntimeAnimatorController;
             animator.runtimeAnimatorController = controller;
-            newGameObject.AddComponent<DragonAnimation>();
+            localAnchor.AddComponent<DragonAnimation>();
 
             // Add ai.
-            newGameObject.AddComponent<DragonAI>();
-            newGameObject.GetComponent<DragonAI>().Dragon.OnPositionChanged += Dragon_OnPositionChanged;
+            localAnchor.AddComponent<DragonAI>();
+            localAnchor.GetComponent<DragonAI>().Dragon.OnTransformChanged += Dragon_OnPositionChanged;
 
-            return newGameObject;
+            return localAnchor;
         }
 
         /// <summary>
         /// Save new position to anchors.
         /// </summary>
-        private void Dragon_OnPositionChanged(Vector3 newPosition)
+        private void Dragon_OnPositionChanged(Transform newTransform)
         {
-            // TODO: implement this.
-            Debug.Log(DEBUG_FILTER + "new position:" + newPosition);
+            Debug.Log(DEBUG_FILTER + "new position:" + newTransform.position);
+
+            // Remove old anchor.
+            localAnchor.RemoveARAnchor();
+            localAnchor.transform.position = newTransform.position; // TODO: remove me
+            //cloudSession.DeleteAnchorAsync(loadedAnchor);
+
+            // Create new.
+            //CreateAnchorAsync(newTransform.position);
         }
 
         private async Task CreateAnchorAsync(Vector3 hitPosition = new Vector3())
@@ -224,7 +239,15 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
 #endif
 
             Quaternion rotation = Quaternion.AngleAxis(0, Vector3.up);
-            localAnchor = GameObject.Instantiate(AnchoredObjectPrefab, hitPosition, rotation);
+            if(localAnchor is null)
+            {
+                localAnchor = GameObject.Instantiate(AnchoredObjectPrefab, hitPosition, rotation);
+            }
+            else
+            {
+                localAnchor.transform.position = hitPosition;
+            }
+            
             localAnchor.AddARAnchor();
 
             // If the user is placing some application content in their environment,

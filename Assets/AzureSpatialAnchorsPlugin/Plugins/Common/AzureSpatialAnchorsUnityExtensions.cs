@@ -33,7 +33,7 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
             source.AddComponent<UnityARUserAnchorComponent>();
 #elif UNITY_ANDROID
             source.AddComponent<UnityARCoreWorldAnchorComponent>();
-#elif WINDOWS_UWP
+#elif UNITY_WSA || WINDOWS_UWP
             source.AddComponent<WorldAnchor>();
 #else
             throw new PlatformNotSupportedException("Unable to add an anchor. The platform is not supported.");
@@ -141,7 +141,7 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
                 GameObject.DestroyImmediate(anchorComponent);
             }
 
-#elif WINDOWS_UWP
+#elif UNITY_WSA || WINDOWS_UWP
             WorldAnchor worldAnchor = source.GetComponent<WorldAnchor>();
             if (worldAnchor != null)
             {

@@ -6,16 +6,15 @@ public class DragonAI : MonoBehaviour
 {
     public DragonModel Dragon { get; private set; }
 
-    void Start()
+    public DragonAI()
     {
-        var initialPosition = gameObject.GetComponent<MeshRenderer>().transform.position;
-        Dragon = new DragonModel(initialPosition);
-        Dragon.OnPositionChanged += Dragon_OnPositionChanged;
+        Dragon = new DragonModel();
     }
 
-    private void Dragon_OnPositionChanged(Vector3 newPosition)
+    void Start()
     {
-        gameObject.transform.position = newPosition;
+        var initialTransform = GetComponent<MeshRenderer>().transform;
+        Dragon.SetInitTransform(initialTransform);
     }
 
     void Update()
