@@ -77,12 +77,11 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
 
         void Update()
         {
-#if UNITY_WSA || WINDOWS_UWP
             ProcessQueue();
-#endif
 #if UNITY_ANDROID
             ProcessLatestFrame();
 #endif
+
             if (!crealedOrLoaded && ScannedPercent > 1.0f)
             {
                 // TODO(Android): call this when tapped
@@ -136,10 +135,10 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
             }
         }
 
-        private void LoadAnchorAsync()
+        private async void LoadAnchorAsync()
         {
             AnchorLocateCriteria criteria = new AnchorLocateCriteria();
-            string anchorId = storageService.GetLastAnchorId();
+            string anchorId = await storageService.GetLastAnchorId();
 
             Debug.Log(DEBUG_FILTER + "we are going to load anchor with id: " + anchorId);
             criteria.Identifiers = new string[] { anchorId };
@@ -153,12 +152,8 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
                 {
                     case LocateAnchorStatus.Located:
                         CloudSpatialAnchor foundAnchor = args.Anchor;
-#if UNITY_WSA || WINDOWS_UWP
                         // Run on UI thread.
                         QueueOnUpdate(() => SpawnOrMoveCurrentAnchoredObject(foundAnchor));
-#else
-                        SpawnOrMoveCurrentAnchoredObject(foundAnchor);
-#endif
                         break;
                     case LocateAnchorStatus.AlreadyTracked:
                         Debug.Log(DEBUG_FILTER + "Anchor already tracked. Identifier: " + args.Identifier);
@@ -199,7 +194,7 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
 
             // Add ai.
             newGameObject.AddComponent<DragonAI>();
-            //newGameObject.GetComponent<DragonAI>().Dragon.OnPositionChanged += Dragon_OnPositionChanged;
+            newGameObject.GetComponent<DragonAI>().Dragon.OnPositionChanged += Dragon_OnPositionChanged;
 
             // Animate
             newGameObject.AddComponent<MeshRenderer>();
@@ -217,6 +212,7 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
         private void Dragon_OnPositionChanged(Vector3 newPosition)
         {
             // TODO: implement this.
+            Debug.Log(DEBUG_FILTER + "new position:" + newPosition);
         }
 
         private async Task CreateAnchorAsync(Vector3 hitPosition = new Vector3())

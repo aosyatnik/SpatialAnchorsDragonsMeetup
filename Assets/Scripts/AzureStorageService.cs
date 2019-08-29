@@ -1,43 +1,15 @@
-﻿// Only working for mobile devices. UWP can not load azure dlls :(
-// TODO: need to rewrite without azure dlls.
-#if UNITY_ANDROID
-//using Microsoft.Azure.CosmosDB.Table;
-//using Microsoft.Azure.Storage;
+﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public class AnchorEntity : TableEntity
-{
-    public AnchorEntity() { }
-    public string id { get; set; }
-}
+using System.Net.Http;
+using System.Threading.Tasks;
 
 public class AzureStorageService
 {
-    CloudStorageAccount account;
-    public AzureStorageService()
+    public async Task<string> GetLastAnchorId()
     {
-        //account = CloudStorageAccount.Parse("...");
+        var httpClient = new HttpClient();
+        var responce = await httpClient.GetAsync("https://melashkinastorage.blob.core.windows.net/anchor-id/anchor-id.txt");
+        return await responce.Content.ReadAsStringAsync();
     }
 
-    public string GetLastAnchorId()
-    {
-        /*var client = account.CreateCloudTableClient();
-        var table = client.GetTableReference("AnchorIds");
-        var retriveOperation = TableOperation.Retrieve<AnchorEntity>("anchor", "id");
-        var anchor = table.Execute(retriveOperation).Result as AnchorEntity;
-        return anchor.id;*/
-        return "d164f374-984c-4bbb-ab48-caa1c68fc458";
-    }
 }
-#else
-public class AzureStorageService
-{
-    public string GetLastAnchorId()
-    {
-        return "d164f374-984c-4bbb-ab48-caa1c68fc458";
-    }
-}
-
-#endif
