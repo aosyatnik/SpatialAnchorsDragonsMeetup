@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29123.88
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpartialAnchorService", "SpartialAnchorService\SpartialAnchorService.csproj", "{CDFC8E5F-64E9-4F91-AABA-E88793C4C121}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CDFC8E5F-64E9-4F91-AABA-E88793C4C121}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CDFC8E5F-64E9-4F91-AABA-E88793C4C121}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CDFC8E5F-64E9-4F91-AABA-E88793C4C121}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CDFC8E5F-64E9-4F91-AABA-E88793C4C121}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AD0B8DB2-1922-4C18-9A99-47C49E5DF357}
+	EndGlobalSection
+EndGlobal
