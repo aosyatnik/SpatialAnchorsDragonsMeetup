@@ -14,7 +14,7 @@ public class DragonModel
     /// <summary>
     /// Minimum distance starting from which dragon will try to run away from the player.
     /// </summary>
-    public int MinPlayerDistance { get; set; } = 10;
+    public int MinPlayerDistance { get; set; } = 5;
 
     /// <summary>
     /// Dragon's speed.
