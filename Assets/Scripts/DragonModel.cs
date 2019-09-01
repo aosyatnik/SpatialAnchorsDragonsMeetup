@@ -19,7 +19,7 @@ public class DragonModel
     /// <summary>
     /// Dragon's speed.
     /// </summary>
-    public float Speed { get; set; } = 0.3f;
+    public float Speed { get; set; } = 0.1f;
 
     /// <summary>
     /// Radius of dragons route.
@@ -32,18 +32,18 @@ public class DragonModel
     private Vector3 _center = new Vector3(0, 0, 0);
     private float _angle;
 
-    private Transform _transform;
-    public Transform Transform
+    private Vector3 _position;
+    public Vector3 Position
     {
-        get { return _transform; }
+        get { return _position; }
         private set
         {
-            _transform = value;
-            OnTransformChanged?.Invoke(_transform);
+            _position = value;
+            OnPositionChanged?.Invoke(_position);
         }
     }
 
-    public event Action<Transform> OnTransformChanged;
+    public event Action<Vector3> OnPositionChanged;
     #endregion
 
     #region Dragon state machine
@@ -74,8 +74,7 @@ public class DragonModel
     /// <param name="position">Player(head) position</param>
     public void TrackPlayerPosition(Vector3 playerPosition)
     {
-        var dist = CalculateDistance(playerPosition, Transform.position);
-        Debug.Log("ASA log: distance" + dist);
+        var dist = CalculateDistance(playerPosition, Position);
         if (dist < MinPlayerDistance)
         {
             RunAway();
@@ -86,12 +85,13 @@ public class DragonModel
         }
     }
 
-    public void SetInitTransform(Transform initTransform)
+    public void SetInitPosition(Vector3 initPosition)
     {
         if(!_initPositionWasSet)
         {
-            _transform = initTransform;
-            _center = initTransform.position;
+            _center = initPosition;
+            var offset = new Vector3(Mathf.Cos(0), 0, Mathf.Sin(0)) * Radius;
+            _position = _center + offset;
             _initPositionWasSet = true;
         }
     }
@@ -110,8 +110,7 @@ public class DragonModel
 
         _angle += Speed * Time.deltaTime;
         var offset = new Vector3(Mathf.Cos(_angle), 0, Mathf.Sin(_angle)) * Radius;
-        Transform.position = _center + offset;
-        OnTransformChanged?.Invoke(_transform);
+        Position = _center + offset;        
     }
 
     #endregion
