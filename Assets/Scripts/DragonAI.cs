@@ -8,6 +8,7 @@ public class DragonAI : MonoBehaviour
     private bool positionTracking = true;
 
     public DragonModel Dragon { get; private set; }
+    public Vector3 NewPosition;
 
     public DragonAI()
     {
@@ -29,6 +30,15 @@ public class DragonAI : MonoBehaviour
             Dragon.TrackPlayerPosition(Camera.main.transform.position);
         }
 #endif
+        if (Dragon.Position != NewPosition)
+        {
+            Dragon.ChangePosition(NewPosition);
+        }
+    }
+
+    public void ChangePosition(Vector3 newPosition)
+    {
+        NewPosition = newPosition;
     }
 
     public void StopPlayerPositionTracking()

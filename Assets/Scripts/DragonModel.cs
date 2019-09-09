@@ -43,7 +43,19 @@ public class DragonModel
         }
     }
 
+    private Vector3 _nextPosition;
+    public Vector3 NextPosition
+    {
+        get { return _nextPosition; }
+        private set
+        {
+            _nextPosition = value;
+            OnNextPositionChanged?.Invoke(_nextPosition);
+        }
+    }
+
     public event Action<Vector3> OnPositionChanged;
+    public event Action<Vector3> OnNextPositionChanged;
     #endregion
 
     #region Dragon state machine
@@ -110,9 +122,18 @@ public class DragonModel
 
         _angle += Speed * Time.deltaTime;
         var offset = new Vector3(Mathf.Cos(_angle), 0, Mathf.Sin(_angle)) * Radius;
-        Position = _center + offset;        
+        NextPosition = _center + offset;        
     }
 
+    /// <summary>
+    /// Moves dragon from old position to the new one.
+    /// </summary>
+    /// <param name="newPosition">new position</param>
+    public void ChangePosition(Vector3 newPosition)
+    {
+        ActionState = ActionStates.Fly;
+        Position = Vector3.Lerp(_position, newPosition, Speed * 4 * Time.deltaTime); // 2 times faster for mobile :) sorry for magic number. it's just for beauty'
+    }
     #endregion
 
     private float CalculateDistance(Vector3 first, Vector3 second)

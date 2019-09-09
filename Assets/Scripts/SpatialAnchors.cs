@@ -121,8 +121,8 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
         private void CreateNewCloudSession()
         {
             cloudSession = new CloudSpatialAnchorSession();
-            cloudSession.Configuration.AccountId = @"df781c25-6f9a-4653-947b-014956e6152b";
-            cloudSession.Configuration.AccountKey = @"xkWcuQ3nSkOPnyOk66hJ4CVuKzF+f35cUd1mpfEsaxk=";
+            cloudSession.Configuration.AccountId = @"2c54fa04-44c0-4b61-a848-4f86395311aa";
+            cloudSession.Configuration.AccountKey = @"JOmr5g1hpJyCOVqFs95MNQ5B1Z5w7S23mFoBeKRSm/I=";
 #if UNITY_IOS
             cloudSpatialAnchorSession.Session = arkitSession.GetNativeSessionPtr();
 #elif UNITY_ANDROID
@@ -217,21 +217,15 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
                 InstantiateLocalGameObject(Pose.identity.position, Pose.identity.rotation);
             }
 
-            // Mark game object as anchor.
-            localAnchorGameObject.AddARAnchor();
-
             // Get anchor position.
 #if UNITY_ANDROID || UNITY_IOS
-            Pose anchorPose = Pose.identity;
-            anchorPose = foundAnchor.GetAnchorPose();
-            localAnchorGameObject.transform.position = anchorPose.position;
-            localAnchorGameObject.transform.rotation = anchorPose.rotation;
+            Pose anchorPose = foundAnchor.GetAnchorPose();
+            Debug.Log("ASA log: new position:" + anchorPose.position);
+            localAnchorGameObject.GetComponent<DragonAI>().ChangePosition(anchorPose.position);
 #elif UNITY_WSA || WINDOWS_UWP
             // Hololens is using SetNativeSpatialAnchorPtr for getting position.
             localAnchorGameObject.GetComponent<WorldAnchor>().SetNativeSpatialAnchorPtr(foundAnchor.LocalAnchor);
 #endif
-
-            Debug.Log(DEBUG_FILTER + $"Position: {localAnchorGameObject.transform.position} Rotation: {localAnchorGameObject.transform.rotation}");
         }
 
         /// <summary>
@@ -239,52 +233,20 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
         /// </summary>
         private void Dragon_OnPositionChanged(Vector3 newPosition)
         {
-            CreateAnchorAsync(newPosition);
+            UpdatePosition(newPosition);
         }
 
-        private async Task CreateAnchorAsync(Vector3 newPosition)
+        private async void Dragon_OnNextPositionChanged(Vector3 nextPosition)
         {
-            Quaternion rotation = Quaternion.AngleAxis(0, Vector3.up); // TODO: support rotation one day.
-            localAnchorGameObject.transform.position = newPosition;
-
-            var dist = Vector3.Distance(localAnchorPosition, newPosition);
-            if (localAnchorPosition == Vector3.zero || dist > minPositionChangeDistance)
-            {
-                // Lock game object. While anchor is saved.
-                Debug.Log(DEBUG_FILTER + "saving new position" + newPosition + " to server");
-                localAnchorGameObject.GetComponent<DragonAI>().StopPlayerPositionTracking();
-                localAnchorGameObject.AddARAnchor();
-
-                if (loadedAnchor != null)
-                {
-                    // Remove old anchor.
-                    await cloudSession.DeleteAnchorAsync(loadedAnchor);
-                }
-
-                // Save to server.
-                CloudSpatialAnchor cloudAnchor = new CloudSpatialAnchor();
-                cloudAnchor.LocalAnchor = localAnchorGameObject.GetNativeAnchorPointer();
-                cloudAnchor.AppProperties[@"label"] = @"Dragon";
-                await cloudSession.CreateAnchorAsync(cloudAnchor);
-                await storageService.PostAnchorId(cloudAnchor.Identifier);
-                Debug.Log(DEBUG_FILTER + $"Created a cloud anchor with ID={cloudAnchor.Identifier}");
-
-                // Unlock game object.
-                localAnchorGameObject.RemoveARAnchor();
-                localAnchorGameObject.GetComponent<DragonAI>().StartPlayerPositionTracking();
-                localAnchorPosition = new Vector3(newPosition.x, newPosition.y, newPosition.z);
-            }
+#if UNITY_WSA || WINDOWS_UWP
+            await CreateAnchorAsync(nextPosition);
+#endif
         }
 
         private void InstantiateLocalGameObject(Vector3 position, Quaternion rotation)
         {
             localAnchorGameObject = GameObject.Instantiate(AnchoredObjectPrefab, position, rotation);
-
-#if UNITY_ANDROID || UNITY_IOS
-            localAnchorGameObject.transform.localScale += new Vector3(5, 5, 5); // Make model 5 times bigger for mobile
-#elif UNITY_WSA || WINDOWS_UWP
-            localAnchorGameObject.transform.localScale += new Vector3(10, 10, 10); // Make model 10 times bigger for hololens
-#endif
+            localAnchorGameObject.transform.localScale += new Vector3(10, 10, 10); // Make model 10 times bigger
 
             // Animate
             localAnchorGameObject.AddComponent<MeshRenderer>();
@@ -293,9 +255,14 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
             animator.runtimeAnimatorController = controller;
             localAnchorGameObject.AddComponent<DragonAnimation>();
 
-            // Add ai only for hololens.
             localAnchorGameObject.AddComponent<DragonAI>();
             localAnchorGameObject.GetComponent<DragonAI>().Dragon.OnPositionChanged += Dragon_OnPositionChanged;
+            localAnchorGameObject.GetComponent<DragonAI>().Dragon.OnNextPositionChanged += Dragon_OnNextPositionChanged;
+        }
+
+        private void UpdatePosition(Vector3 newPosition)
+        {
+            localAnchorGameObject.transform.position = newPosition;
         }
 
         #region Android
@@ -444,10 +411,41 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
 
 
             InstantiateLocalGameObject(hitInfo.point, Quaternion.AngleAxis(0, Vector3.up));
+        }
 
-            // after dragon is initialized, get its' position
-            var newPosition = localAnchorGameObject.GetComponent<DragonAI>().Dragon.Position;
-            CreateAnchorAsync(newPosition);
+        private async Task CreateAnchorAsync(Vector3 newPosition)
+        {
+            var dist = Vector3.Distance(localAnchorPosition, newPosition);
+            if (newPosition != Vector3.zero && (localAnchorPosition == Vector3.zero || dist > minPositionChangeDistance))
+            {
+                // Lock game object. While anchor is saved.
+                Debug.Log(DEBUG_FILTER + "saving next position" + newPosition + " to server");
+                localAnchorGameObject.GetComponent<DragonAI>().StopPlayerPositionTracking();
+                localAnchorGameObject.AddARAnchor();
+
+                if (loadedAnchor != null)
+                {
+                    // Remove old anchor.
+                    await cloudSession.DeleteAnchorAsync(loadedAnchor);
+                }
+
+                // Save to server.
+                CloudSpatialAnchor cloudAnchor = new CloudSpatialAnchor();
+                cloudAnchor.LocalAnchor = localAnchorGameObject.GetNativeAnchorPointer();
+                cloudAnchor.AppProperties[@"label"] = @"Dragon";
+                await cloudSession.CreateAnchorAsync(cloudAnchor);
+                await storageService.PostAnchorId(cloudAnchor.Identifier);
+                Debug.Log(DEBUG_FILTER + $"Created a cloud anchor with ID={cloudAnchor.Identifier}");
+
+                // Unlock game object.
+                localAnchorGameObject.RemoveARAnchor();
+                localAnchorGameObject.GetComponent<DragonAI>().ChangePosition(newPosition);
+                Debug.Log(DEBUG_FILTER + "saved position" + newPosition + " to server");
+                await Task.Delay(5000); // Wait 5 sec before tracking again.
+                Debug.Log(DEBUG_FILTER + "continue tracking");
+                localAnchorGameObject.GetComponent<DragonAI>().StartPlayerPositionTracking();
+                localAnchorPosition = new Vector3(newPosition.x, newPosition.y, newPosition.z);
+            }
         }
 #endif
         #endregion
