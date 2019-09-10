@@ -25,7 +25,6 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
     {
         // TODO: remove me
         public static string DEBUG_FILTER = "ASA Log:";
-        public static bool crealedOrLoaded = false;
 
         #region private members
         /// <summary>
@@ -374,12 +373,7 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
         /// Use the recognizer to detect air taps.
         /// </summary>
         private GestureRecognizer recognizer;
-
-        /// <summary>
-        /// Used to initiate anchor creation only once.
-        /// </summary>
-        private bool tapExecuted = false;
-
+        
         private void CaptureGestures()
         {
             recognizer = new GestureRecognizer();
@@ -393,12 +387,6 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
 
         private void HandleTap(TappedEventArgs tapEvent)
         {
-            if (tapExecuted)
-            {
-                return;
-            }
-
-            tapExecuted = true;
             Debug.Log(DEBUG_FILTER + "hololens will create a new anchor.");
 
             // Construct a Ray using forward direction of the HoloLens.
@@ -408,41 +396,37 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
             RaycastHit hitInfo;
             Physics.Raycast(GazeRay, out hitInfo, float.MaxValue);
 
-            InstantiateLocalGameObject(hitInfo.point, Quaternion.AngleAxis(0, Vector3.up));
+            if (localAnchorGameObject is null)
+            {
+                InstantiateLocalGameObject(hitInfo.point, Quaternion.AngleAxis(0, Vector3.up));
+            }
+            
+            CreateAnchorAsync(hitInfo.point);
         }
 
         private async Task CreateAnchorAsync(Vector3 newPosition)
         {
-            var dist = Vector3.Distance(localAnchorPosition, newPosition);
-            if (newPosition != Vector3.zero && (localAnchorPosition == Vector3.zero || dist > minPositionChangeDistance))
+            // Lock game object. While anchor is saved.
+            localAnchorGameObject.AddARAnchor();
+
+            if (loadedAnchor != null)
             {
-                // Lock game object. While anchor is saved.
-                localAnchorGameObject.GetComponent<DragonAI>().StopPlayerPositionTracking();
-                localAnchorGameObject.AddARAnchor();
-
-                if (loadedAnchor != null)
-                {
-                    // Remove old anchor.
-                    await cloudSession.DeleteAnchorAsync(loadedAnchor);
-                }
-
-                // Save to server.
-                CloudSpatialAnchor cloudAnchor = new CloudSpatialAnchor();
-                cloudAnchor.LocalAnchor = localAnchorGameObject.GetNativeAnchorPointer();
-                cloudAnchor.AppProperties[@"label"] = @"Dragon";
-                await cloudSession.CreateAnchorAsync(cloudAnchor);
-                await storageService.PostAnchorId(cloudAnchor.Identifier);
-                Debug.Log(DEBUG_FILTER + $"Created a cloud anchor with ID={cloudAnchor.Identifier}");
-
-                // Unlock game object.
-                localAnchorGameObject.RemoveARAnchor();
-                localAnchorGameObject.GetComponent<DragonAI>().ChangePosition(newPosition);
-                Debug.Log(DEBUG_FILTER + "saved position" + newPosition + " to server");
-                await Task.Delay(5000); // Wait 5 sec before tracking again.
-                Debug.Log(DEBUG_FILTER + "continue tracking");
-                localAnchorGameObject.GetComponent<DragonAI>().StartPlayerPositionTracking();
-                localAnchorPosition = new Vector3(newPosition.x, newPosition.y, newPosition.z);
+                // Remove old anchor.
+                await cloudSession.DeleteAnchorAsync(loadedAnchor);
             }
+
+            // Save to server.
+            CloudSpatialAnchor cloudAnchor = new CloudSpatialAnchor();
+            cloudAnchor.LocalAnchor = localAnchorGameObject.GetNativeAnchorPointer();
+            cloudAnchor.AppProperties[@"label"] = @"Dragon";
+            await cloudSession.CreateAnchorAsync(cloudAnchor);
+            await storageService.PostAnchorId(cloudAnchor.Identifier);
+            Debug.Log(DEBUG_FILTER + $"Created a cloud anchor with ID={cloudAnchor.Identifier}");
+
+            // Unlock game object.
+            localAnchorGameObject.RemoveARAnchor();
+            localAnchorGameObject.GetComponent<DragonAI>().ChangePosition(newPosition);
+            Debug.Log(DEBUG_FILTER + "saved position" + newPosition + " to server");
         }
 #endif
         #endregion

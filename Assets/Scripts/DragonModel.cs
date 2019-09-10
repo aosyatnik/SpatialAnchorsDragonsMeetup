@@ -101,9 +101,7 @@ public class DragonModel
     {
         if(!_initPositionWasSet)
         {
-            _center = initPosition;
-            var offset = new Vector3(Mathf.Cos(0), 0, Mathf.Sin(0)) * Radius;
-            _position = _center + offset;
+            _position = initPosition;
             _initPositionWasSet = true;
         }
     }

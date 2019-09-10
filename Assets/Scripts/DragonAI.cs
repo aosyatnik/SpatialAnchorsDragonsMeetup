@@ -27,7 +27,7 @@ public class DragonAI : MonoBehaviour
         // Main camera position is player's position.
         if(positionTracking)
         {
-            Dragon.TrackPlayerPosition(Camera.main.transform.position);
+            // Dragon.TrackPlayerPosition(Camera.main.transform.position);
         }
 #endif
         if (Dragon.Position != NewPosition)
