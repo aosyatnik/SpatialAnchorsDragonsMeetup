@@ -246,7 +246,6 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
         private void InstantiateLocalGameObject(Vector3 position, Quaternion rotation)
         {
             localAnchorGameObject = GameObject.Instantiate(AnchoredObjectPrefab, position, rotation);
-            localAnchorGameObject.transform.localScale += new Vector3(10, 10, 10); // Make model 10 times bigger
 
             // Animate
             localAnchorGameObject.AddComponent<MeshRenderer>();
@@ -409,7 +408,6 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
             RaycastHit hitInfo;
             Physics.Raycast(GazeRay, out hitInfo, float.MaxValue);
 
-
             InstantiateLocalGameObject(hitInfo.point, Quaternion.AngleAxis(0, Vector3.up));
         }
 
@@ -419,7 +417,6 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
             if (newPosition != Vector3.zero && (localAnchorPosition == Vector3.zero || dist > minPositionChangeDistance))
             {
                 // Lock game object. While anchor is saved.
-                Debug.Log(DEBUG_FILTER + "saving next position" + newPosition + " to server");
                 localAnchorGameObject.GetComponent<DragonAI>().StopPlayerPositionTracking();
                 localAnchorGameObject.AddARAnchor();
 

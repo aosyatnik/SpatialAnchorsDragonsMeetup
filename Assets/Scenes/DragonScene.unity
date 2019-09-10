@@ -194,7 +194,7 @@ GameObject:
   - component: {fileID: 661390075}
   - component: {fileID: 661390078}
   m_Layer: 0
-  m_Name: HololensDebugLog
+  m_Name: DebugLog
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
