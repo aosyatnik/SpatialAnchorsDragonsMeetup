@@ -238,7 +238,7 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
         private async void Dragon_OnNextPositionChanged(Vector3 nextPosition)
         {
 #if UNITY_WSA || WINDOWS_UWP
-            await CreateAnchorAsync(nextPosition);
+            await CreateAnchorAsync();
 #endif
         }
 
@@ -261,9 +261,16 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
         private void UpdatePosition(Vector3 newPosition)
         {
             localAnchorGameObject.transform.position = newPosition;
+
+#if UNITY_WSA || WINDOWS_UWP
+            if (lastTappedLocation == newPosition)
+            {
+                CreateAnchorAsync();
+            }
+#endif
         }
 
-        #region Android
+#region Android
 #if UNITY_ANDROID
 
         private void Start()
@@ -354,10 +361,13 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
             }
         }
 #endif
-        #endregion
+#endregion
 
-        #region Hololens
+#region Hololens
 #if UNITY_WSA || WINDOWS_UWP
+
+        private Vector3 lastTappedLocation;
+
         private void Start()
         {
             CreateNewCloudSession();
@@ -400,11 +410,17 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
             {
                 InstantiateLocalGameObject(hitInfo.point, Quaternion.AngleAxis(0, Vector3.up));
             }
-            
-            CreateAnchorAsync(hitInfo.point);
+
+            localAnchorGameObject.GetComponent<DragonAI>().ChangePosition(hitInfo.point);
+            if (lastTappedLocation == Vector3.zero)
+            {
+                CreateAnchorAsync();
+            }
+
+            lastTappedLocation = hitInfo.point;
         }
 
-        private async Task CreateAnchorAsync(Vector3 newPosition)
+        private async Task CreateAnchorAsync()
         {
             // Lock game object. While anchor is saved.
             localAnchorGameObject.AddARAnchor();
@@ -425,13 +441,12 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
 
             // Unlock game object.
             localAnchorGameObject.RemoveARAnchor();
-            localAnchorGameObject.GetComponent<DragonAI>().ChangePosition(newPosition);
-            Debug.Log(DEBUG_FILTER + "saved position" + newPosition + " to server");
+            Debug.Log(DEBUG_FILTER + "saved position" + localAnchorGameObject.transform.position + " to server");
         }
 #endif
-        #endregion
+#endregion
 
-        #region IOS (not ready)
+#region IOS (not ready)
 
 #if UNITY_IOS
         private Vector3 GetHitPosition_IOS()
@@ -454,6 +469,6 @@ namespace Microsoft.Azure.SpatialAnchors.Unity
             return hitPosition;
         }
 #endif
-        #endregion
+#endregion
     }
 }
