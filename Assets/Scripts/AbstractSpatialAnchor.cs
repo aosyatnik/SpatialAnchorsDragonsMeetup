@@ -1,4 +1,5 @@
 ﻿using Microsoft.Azure.SpatialAnchors;
+using Microsoft.Azure.SpatialAnchors.Unity;
 using Microsoft.Azure.SpatialAnchors.Unity.Android;
 using System;
 using System.Collections;
@@ -196,5 +197,13 @@ public class AbstractSpatialAnchor : MonoBehaviour
         localAnchorGameObject.AddComponent<DragonAnimation>();
 
         localAnchorGameObject.AddComponent<DragonAI>();
+        localAnchorGameObject.GetComponent<DragonAI>().Dragon.OnPositionChanged += Dragon_OnPositionChanged;
+    }
+
+    private void Dragon_OnPositionChanged(Vector3 newPosition)
+    {
+        Debug.Log($"ASA : Dragon_OnPositionChanged {newPosition}");
+        localAnchorGameObject.RemoveARAnchor();
+        localAnchorGameObject.transform.position = newPosition;
     }
 }
