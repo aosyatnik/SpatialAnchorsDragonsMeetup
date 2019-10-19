@@ -8,12 +8,12 @@ using UnityEngine.UI;
 public class ScannedPercentText : MonoBehaviour
 {
     private Text _text;
-    private SpatialAnchors _anchorsService;
+    private AbstractSpatialAnchor _anchorsService;
 
     void Start()
     {
         _text = gameObject.GetComponentInChildren<Text>();
-        _anchorsService = GameObject.Find("SpartialAnchors").GetComponent<SpatialAnchors>();
+        _anchorsService = GameObject.Find("SpartialAnchors").GetComponent<AbstractSpatialAnchor>();
     }
 
     void Update()

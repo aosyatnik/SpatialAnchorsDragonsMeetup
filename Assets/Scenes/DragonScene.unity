@@ -527,6 +527,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2008799380}
   - component: {fileID: 2008799381}
+  - component: {fileID: 2008799382}
   m_Layer: 0
   m_Name: SpartialAnchors
   m_TagString: Untagged
@@ -556,6 +557,20 @@ MonoBehaviour:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2008799379}
   m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6598fd93b661e224dad58e44af60b599, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ScannedPercent: 0
+  AnchoredObjectPrefab: {fileID: 100142, guid: 7e35bd5abf60a234798b95ef300f64e2, type: 3}
+--- !u!114 &2008799382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2008799379}
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4273ff0656ff5b540910851024a5a2f9, type: 3}
   m_Name: 
