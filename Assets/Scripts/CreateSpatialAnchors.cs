@@ -18,13 +18,13 @@ public class CreateSpatialAnchors : AbstractSpatialAnchor
 
         if (ScannedPercent > 1.0f)
         {
-            foreach (Touch touch in Input.touches)
+            // If the player has not touched the screen, we are done with this update.
+            Touch touch;
+            if (Input.touchCount < 1 || (touch = Input.GetTouch(0)).phase != TouchPhase.Ended)
             {
-                if (touch.phase == TouchPhase.Began)
-                {
-                    CreateAnchorAsync(touch.position);
-                }
+                return;
             }
+            CreateAnchorAsync(touch.position);
         }
     }
 
@@ -34,6 +34,7 @@ public class CreateSpatialAnchors : AbstractSpatialAnchor
         Vector3 hitPosition = GetHitPosition_Android(position);
 
         Quaternion rotation = Quaternion.AngleAxis(0, Vector3.up);
+        Debug.Log($"ASA CreateAnchorAsync: {hitPosition}");
         InstantiateLocalGameObject(hitPosition, rotation);
         localAnchorGameObject.AddARAnchor();
 
@@ -50,7 +51,7 @@ public class CreateSpatialAnchors : AbstractSpatialAnchor
     {
         TrackableHit hit;
         TrackableHitFlags raycastFilter = TrackableHitFlags.PlaneWithinPolygon | TrackableHitFlags.FeaturePointWithSurfaceNormal;
-        Debug.Log(DEBUG_FILTER + $"Creating raycast.");
+        Debug.Log(DEBUG_FILTER + $"Creating raycast. Click position:{position}");
         if (Frame.Raycast(position.x, position.y, raycastFilter, out hit))
         {
             Debug.Log(DEBUG_FILTER + $"{hit.Pose.position}");

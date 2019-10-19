@@ -187,6 +187,7 @@ public class AbstractSpatialAnchor : MonoBehaviour
 
     protected void InstantiateLocalGameObject(Vector3 position, Quaternion rotation)
     {
+        Debug.Log($"ASA position on create: {position}");
         localAnchorGameObject = GameObject.Instantiate(AnchoredObjectPrefab, position, rotation);
 
         // Animate
@@ -197,13 +198,5 @@ public class AbstractSpatialAnchor : MonoBehaviour
         localAnchorGameObject.AddComponent<DragonAnimation>();
 
         localAnchorGameObject.AddComponent<DragonAI>();
-        localAnchorGameObject.GetComponent<DragonAI>().Dragon.OnPositionChanged += Dragon_OnPositionChanged;
-    }
-
-    private void Dragon_OnPositionChanged(Vector3 newPosition)
-    {
-        Debug.Log($"ASA : Dragon_OnPositionChanged {newPosition}");
-        localAnchorGameObject.RemoveARAnchor();
-        localAnchorGameObject.transform.position = newPosition;
     }
 }
