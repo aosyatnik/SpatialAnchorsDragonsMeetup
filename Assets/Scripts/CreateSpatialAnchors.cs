@@ -20,10 +20,11 @@ public class CreateSpatialAnchors : AbstractSpatialAnchor
         {
             // If the player has not touched the screen, we are done with this update.
             Touch touch;
-            if (Input.touchCount < 1 || (touch = Input.GetTouch(0)).phase != TouchPhase.Ended)
+            if (Input.touchCount < 1 || (touch = Input.GetTouch(0)).phase != TouchPhase.Began)
             {
                 return;
             }
+
             CreateAnchorAsync(touch.position);
         }
     }
@@ -31,7 +32,21 @@ public class CreateSpatialAnchors : AbstractSpatialAnchor
     private async Task CreateAnchorAsync(Vector2 position)
     {
         // Create a local anchor, perhaps by hit-testing and spawning an object within the scene
-        Vector3 hitPosition = GetHitPosition_Android(position);
+
+        TrackableHit hit;
+        Vector3 hitPosition;
+        TrackableHitFlags raycastFilter = TrackableHitFlags.PlaneWithinPolygon | TrackableHitFlags.FeaturePointWithSurfaceNormal;
+        Debug.Log(DEBUG_FILTER + $"Creating raycast. Click position:{position}");
+        if (Frame.Raycast(position.x, position.y, raycastFilter, out hit))
+        {
+            Debug.Log(DEBUG_FILTER + $"{hit.Pose.position}");
+            hitPosition = hit.Pose.position;
+        }
+        else
+        {
+            // Couldn't create raycast.
+            return;
+        }
 
         Quaternion rotation = Quaternion.AngleAxis(0, Vector3.up);
         Debug.Log($"ASA CreateAnchorAsync: {hitPosition}");
@@ -45,18 +60,5 @@ public class CreateSpatialAnchors : AbstractSpatialAnchor
         await cloudSession.CreateAnchorAsync(cloudAnchor);
         await storageService.PostAnchorId(cloudAnchor.Identifier);
         Debug.Log(DEBUG_FILTER + $"Created a cloud anchor with ID={cloudAnchor.Identifier}");
-    }
-
-    public Vector3 GetHitPosition_Android(Vector2 position)
-    {
-        TrackableHit hit;
-        TrackableHitFlags raycastFilter = TrackableHitFlags.PlaneWithinPolygon | TrackableHitFlags.FeaturePointWithSurfaceNormal;
-        Debug.Log(DEBUG_FILTER + $"Creating raycast. Click position:{position}");
-        if (Frame.Raycast(position.x, position.y, raycastFilter, out hit))
-        {
-            Debug.Log(DEBUG_FILTER + $"{hit.Pose.position}");
-            return hit.Pose.position;
-        }
-        return new Vector3();
     }
 }

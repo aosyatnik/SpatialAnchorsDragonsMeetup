@@ -188,7 +188,15 @@ public class AbstractSpatialAnchor : MonoBehaviour
     protected void InstantiateLocalGameObject(Vector3 position, Quaternion rotation)
     {
         Debug.Log($"ASA position on create: {position}");
-        localAnchorGameObject = GameObject.Instantiate(AnchoredObjectPrefab, position, rotation);
+        if(localAnchorGameObject is null)
+        {
+            localAnchorGameObject = GameObject.Instantiate(AnchoredObjectPrefab, position, rotation);
+        }
+        else
+        {
+            localAnchorGameObject.transform.position = position;
+            localAnchorGameObject.transform.rotation = rotation;
+        }
 
         // Animate
         localAnchorGameObject.AddComponent<MeshRenderer>();
