@@ -13,14 +13,24 @@ public class ScannedPercentText : MonoBehaviour
     void Start()
     {
         _text = gameObject.GetComponentInChildren<Text>();
-        _anchorsService = GameObject.Find("SpartialAnchors").GetComponent<AbstractSpatialAnchor>();
+        var anchorsGO = GameObject.Find("SpartialAnchors");
+        var createSA = anchorsGO.GetComponent<CreateSpatialAnchors>();
+        var loadSA = anchorsGO.GetComponent<LoadSpatialAnchors>();
+        if (createSA.enabled)
+        {
+            _anchorsService = createSA;
+        }
+        else
+        {
+            _anchorsService = loadSA;
+        }
     }
 
     void Update()
     {
-        if(_anchorsService != null)
+        if (_anchorsService != null)
         {
-            if(_anchorsService.ScannedPercent < 1)
+            if (_anchorsService.ScannedPercent < 1)
             {
                 _text.text = String.Format("Scanned room percent {0:P2}.", _anchorsService.ScannedPercent);
             }
@@ -28,7 +38,7 @@ public class ScannedPercentText : MonoBehaviour
             {
                 _text.text = String.Format("Room is scanned. Dragon is somewhere here.");
             }
-            
+
         }
     }
 }

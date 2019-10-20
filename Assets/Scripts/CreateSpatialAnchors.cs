@@ -44,12 +44,11 @@ public class CreateSpatialAnchors : AbstractSpatialAnchor
         }
         else
         {
-            // Couldn't create raycast.
+            Debug.Log(DEBUG_FILTER + "Couldn't create raycast.");
             return;
         }
 
         Quaternion rotation = Quaternion.AngleAxis(0, Vector3.up);
-        Debug.Log($"ASA CreateAnchorAsync: {hitPosition}");
         InstantiateLocalGameObject(hitPosition, rotation);
         localAnchorGameObject.AddARAnchor();
 
